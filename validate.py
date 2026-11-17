@@ -21,6 +21,10 @@ def main():
     expect("lesson1.questions", ["documents: 24", "question shapes: lookup, multi-hop, global",
                                  "MULTI-HOP: Which supplier is named in both the March outage review",
                                  "lesson1 demo complete"])
+    expect("lesson7.hopgap", ["evidence coverage: 100%",
+                              "single-chunk answerable: YES",
+                              "shapes answered from their own evidence: 1 of 3",
+                              "hopgap demo complete"])
     print()
     print("== direct assertions ==")
     from graphcommon import DOCUMENTS, QUESTIONS, keyword_search, tokenize
