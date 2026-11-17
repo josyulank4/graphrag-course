@@ -25,6 +25,13 @@ def main():
                               "single-chunk answerable: YES",
                               "shapes answered from their own evidence: 1 of 3",
                               "hopgap demo complete"])
+    expect("lesson11.schemasketch", ["questions: 20",
+                              "shape census: lookup 8, multi-hop 7, global 5",
+                              "entity types: 8",
+                              "relationship types: 6",
+                              "questions served: 20 of 20",
+                              "types without a justifying question: 0",
+                              "schemasketch demo complete"])
     print()
     print("== direct assertions ==")
     from graphcommon import DOCUMENTS, QUESTIONS, keyword_search, tokenize
@@ -38,6 +45,11 @@ def main():
           keyword_search(QUESTIONS[0]["question"], top_k=1) == ["d03"])
     check("tokenize drops stopwords and case",
           tokenize("The Kestrel Contract") == {"kestrel", "contract"})
+    from lesson11.schemasketch import QUESTIONS20
+    check("twenty questions in the schema sketch", len(QUESTIONS20) == 20)
+    check("question census is 8 lookup / 7 multi-hop / 5 global",
+          [sum(1 for q in QUESTIONS20 if q[1] == s)
+           for s in ("lookup", "multi-hop", "global")] == [8, 7, 5])
     print()
     print(f"CHECKS: {COUNT[0]}  FAILURES: {len(FAILURES)}")
     if FAILURES:
