@@ -1,12 +1,12 @@
-"""Lesson 11 - A Schema From Twenty Questions (schemasketch) - START STATE.
+"""Lesson 11 - A Schema From Twenty Questions (schemasketch).
 
 Takes twenty real questions over the Meridian corpus - the three canonical
 questions of the course plus seventeen more drawn from the same documents -
-and derives the graph schema from them, Lesson 10's method made executable.
-The twenty questions and their shape census are here; the derivation -
-entity types, relationship types, properties, and the audit that every
-type is justified and every question served - is built in the lesson;
-derive_schema() below is the honest stub it replaces.
+and derives the graph schema from them, Lesson 10's method made executable:
+every entity type and relationship type must name the questions that
+justify it, and every question must be served by the schema it produced.
+A type no question needs is not in the schema. A question the schema
+cannot serve is a schema bug, printed as one.
 Run: python -m lesson11.schemasketch
 """
 from __future__ import annotations
@@ -37,6 +37,58 @@ QUESTIONS20: list[tuple[int, str, str]] = [
     (20, "multi-hop", "The depot where the battery smoked is in which city, and which audit visits that depot next month?"),
 ]
 
+# The derived schema. justified_by is the audit trail: the question ids
+# whose evidence paths need this type. served_by maps each question to
+# the types its answer path walks.
+ENTITY_TYPES: dict[str, list[int]] = {
+    "Supplier": [1, 2, 7, 11, 12, 18],
+    "Insurer": [5, 18],
+    "Licensor": [6, 18],
+    "Location": [4, 8, 9, 17, 20],
+    "Equipment": [7, 10, 12, 17],
+    "Incident": [3, 8, 9, 10, 14, 20],
+    "Contract": [1, 4, 5, 6, 7, 11, 15],
+    "Document": list(range(1, 21)),
+}
+
+RELATIONSHIP_TYPES: dict[str, list[int]] = {
+    "named_in": [2, 18],
+    "supplied_by": [7, 12],
+    "occurred_at": [8, 9, 20],
+    "involved": [10, 17],
+    "party_to": [1, 6, 11, 15],
+    "held_by": [5],
+}
+
+SERVED_BY: dict[int, list[str]] = {
+    1: ["Contract", "Supplier"],
+    2: ["Supplier", "Document"],
+    3: ["Incident", "Document"],
+    4: ["Contract", "Location"],
+    5: ["Insurer", "Contract"],
+    6: ["Licensor", "Contract"],
+    7: ["Supplier", "Equipment", "Contract"],
+    8: ["Location", "Incident"],
+    9: ["Location", "Incident"],
+    10: ["Equipment", "Incident"],
+    11: ["Contract", "Supplier"],
+    12: ["Supplier", "Equipment"],
+    13: ["Document"],
+    14: ["Incident"],
+    15: ["Contract"],
+    16: ["Document"],
+    17: ["Location", "Equipment"],
+    18: ["Supplier", "Insurer", "Licensor"],
+    19: ["Document"],
+    20: ["Location", "Incident"],
+}
+
+PROPERTIES: list[tuple[str, str, list[int]]] = [
+    ("Contract", "kind (supply / service / insurance / lease / licence)", [1, 4, 5, 6, 11]),
+    ("Contract", "renewal_date", [1, 15]),
+    ("Contract", "seats", [6]),
+    ("every edge", "source_sentence (provenance)", list(range(1, 21))),
+]
 
 
 def census() -> dict[str, int]:
@@ -47,7 +99,33 @@ def census() -> dict[str, int]:
 
 
 def derive_schema() -> dict:
-    raise NotImplementedError("schema derivation is built in the lesson")
+    """Assemble the schema and audit it against the questions.
+
+    The audit is the lesson: a type with no justifying question is
+    removed by the questions, not by taste; a question whose served
+    types are missing or unjustified is a schema bug.
+    """
+    problems = []
+    for name, justified in list(ENTITY_TYPES.items()) + list(RELATIONSHIP_TYPES.items()):
+        if not justified:
+            problems.append(f"type without a justifying question: {name}")
+    served = 0
+    for qid, _shape, _text in QUESTIONS20:
+        types = SERVED_BY.get(qid, [])
+        if not types:
+            problems.append(f"question Q{qid} is served by no type")
+            continue
+        unjustified = [t for t in types
+                       if qid not in ENTITY_TYPES.get(t, [])]
+        if unjustified:
+            problems.append(f"question Q{qid} served by unjustified types {unjustified}")
+        else:
+            served += 1
+    return {"entity_types": ENTITY_TYPES,
+            "relationship_types": RELATIONSHIP_TYPES,
+            "properties": PROPERTIES,
+            "served": served,
+            "problems": problems}
 
 
 def main() -> None:
@@ -57,7 +135,27 @@ def main() -> None:
     c = census()
     print(f"shape census: lookup {c['lookup']}, multi-hop {c['multi-hop']}, "
           f"global {c['global']}")
-    derive_schema()
+    schema = derive_schema()
+    print(f"entity types: {len(schema['entity_types'])}")
+    for name, justified in schema["entity_types"].items():
+        by = ", ".join(f"Q{q}" for q in justified[:4])
+        if len(justified) > 4:
+            by += f", +{len(justified) - 4} more"
+        print(f"  {name} - justified by {by}")
+    print(f"relationship types: {len(schema['relationship_types'])}")
+    for name, justified in schema["relationship_types"].items():
+        by = ", ".join(f"Q{q}" for q in justified)
+        print(f"  {name} - justified by {by}")
+    print("properties:")
+    for owner, prop, _justified in schema["properties"]:
+        print(f"  {owner}.{prop}")
+    orphans = sum(1 for j in list(ENTITY_TYPES.values())
+                  + list(RELATIONSHIP_TYPES.values()) if not j)
+    print(f"questions served: {schema['served']} of {len(QUESTIONS20)}")
+    print(f"types without a justifying question: {orphans}")
+    if schema["problems"]:
+        for p in schema["problems"]:
+            print(f"  SCHEMA BUG: {p}")
     print("schemasketch demo complete")
 
 
