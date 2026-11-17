@@ -32,6 +32,13 @@ def main():
                               "questions served: 20 of 20",
                               "types without a justifying question: 0",
                               "schemasketch demo complete"])
+    expect("lesson15.extractpipe", ["documents: 24",
+                              "chunks: 51",
+                              "equipment mentions found: 0 of 8",
+                              "entities: 29",
+                              "edges: 47",
+                              "edges with evidence: 47 of 47 (100%)",
+                              "extractpipe demo complete"])
     print()
     print("== direct assertions ==")
     from graphcommon import DOCUMENTS, QUESTIONS, keyword_search, tokenize
@@ -50,6 +57,10 @@ def main():
     check("question census is 8 lookup / 7 multi-hop / 5 global",
           [sum(1 for q in QUESTIONS20 if q[1] == s)
            for s in ("lookup", "multi-hop", "global")] == [8, 7, 5])
+    from lesson15.extractpipe import chunk_corpus
+    check("corpus chunks into 51 sentence windows with provenance",
+          len(chunk_corpus()) == 51
+          and all(c[0].startswith("d") and c[2] for c in chunk_corpus()))
     print()
     print(f"CHECKS: {COUNT[0]}  FAILURES: {len(FAILURES)}")
     if FAILURES:
