@@ -123,9 +123,11 @@ def main():
     check("ten partials touch an incident report, four touch none",
           sum(1 for p in _partials if p["incident"]) == 10
           and sum(1 for p in _partials if not p["incident"]) == 4)
-    from lesson35.hybridfuse import QUESTIONS4, graph_search
+    from lesson35.hybridfuse import QUESTIONS4, fuse, graph_search
     check("the graph abstains on the cafeteria question",
           graph_search(resolve_graph(), QUESTIONS4[3])[0] == [])
+    check("hybrid fusion ranks the corroborated document first",
+          fuse(["d03", "d01", "d02"], ["d03", "d01", "d02"])[0] == "d03")
     print()
     print(f"CHECKS: {COUNT[0]}  FAILURES: {len(FAILURES)}")
     if FAILURES:

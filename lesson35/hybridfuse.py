@@ -1,5 +1,4 @@
-"""Lesson 35 - Fuse Graph and Vector Evidence (hybridfuse) -
-START STATE.
+"""Lesson 35 - Fuse Graph and Vector Evidence (hybridfuse).
 
 The hybrid pipeline, run across every question shape the course
 teaches, against both single-retriever scores. The vector side is
@@ -149,10 +148,16 @@ def graph_verdict(graph: dict, q: dict,
 
 
 def fuse(vector_docs: list[str], graph_docs: list[str]) -> list[str]:
-    """Reciprocal rank fusion over the two rankings - built in
-    Lesson 35. The start state has both retrievers and their
-    verdicts; the combination does not exist yet."""
-    raise NotImplementedError("the fusion is built in Lesson 35")
+    """Reciprocal rank fusion: a document scores for every list that
+    names it, weighted by its rank there. Corroboration - both
+    retrievers naming the same document - is what lifts a document
+    to the top; neither side's order is simply trusted."""
+    scores: dict[str, float] = {}
+    for ranking in (vector_docs, graph_docs):
+        for rank, doc_id in enumerate(ranking, 1):
+            scores[doc_id] = scores.get(doc_id, 0.0) + 1.0 / (RRF_K + rank)
+    order = {doc_id: i for i, (doc_id, _t, _x) in enumerate(DOCUMENTS)}
+    return sorted(scores, key=lambda d: (-scores[d], order[d]))
 
 
 def main() -> None:
