@@ -62,6 +62,11 @@ def main():
                               "named in both seed documents: Kestrel Components",
                               "answer: Kestrel Components (Supplier)",
                               "localsearch demo complete"])
+    expect("lesson31.globalmap", ["communities: 14 (Lesson 23 output); summary claims checked: 71, violations: 0",
+                              "map: 14 partial answers, one per community",
+                              "themes: 10 of 14 communities touch an incident report; 4 contribute coverage, not themes",
+                              "coverage: incident reports 9 of 9; map documents 17 of 24",
+                              "globalmap demo complete"])
     print()
     print("== direct assertions ==")
     from graphcommon import DOCUMENTS, QUESTIONS, keyword_search, tokenize
@@ -104,6 +109,16 @@ def main():
           sorted(set(named_entities(_g, "d02"))
                  & set(named_entities(_g, "d03")))
           == ["Kestrel Components"])
+    from lesson31.globalmap import partial_answers
+    from lesson23.communitylens import entity_graph as _eg, \
+        detect_communities as _dc
+    _adj = _eg(_g)
+    _partials = partial_answers(_g, _adj, _dc(_adj))
+    check("global map phase yields one partial per community",
+          len(_partials) == 14)
+    check("ten partials touch an incident report, four touch none",
+          sum(1 for p in _partials if p["incident"]) == 10
+          and sum(1 for p in _partials if not p["incident"]) == 4)
     print()
     print(f"CHECKS: {COUNT[0]}  FAILURES: {len(FAILURES)}")
     if FAILURES:
