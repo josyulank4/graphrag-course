@@ -48,6 +48,14 @@ def main():
                               "evidence preserved: named_in 34 of 34",
                               "resolved graph matches Lesson 15 canonical graph: YES",
                               "resolvex demo complete"])
+    expect("lesson23.communitylens", ["resolved graph: 29 entities, 47 edges",
+                              "entity graph: 29 nodes, 22 links",
+                              "communities detected: 14",
+                              "singleton communities: 4",
+                              "draft summary of community 1: 8 claims, 3 violations",
+                              "summaries written: 14",
+                              "summary claims checked: 71, violations: 0",
+                              "communitylens demo complete"])
     print()
     print("== direct assertions ==")
     from graphcommon import DOCUMENTS, QUESTIONS, keyword_search, tokenize
@@ -77,6 +85,10 @@ def main():
     check("handheld scanners arrives under two surface forms",
           _sg["entities"].get("Handheld scanners") == "Equipment"
           and _sg["entities"].get("scanners") == "Equipment")
+    from lesson19.resolvex import resolve_graph
+    from lesson23.communitylens import entity_graph
+    check("entity graph spans all 29 resolved entities",
+          len(entity_graph(resolve_graph())) == 29)
     print()
     print(f"CHECKS: {COUNT[0]}  FAILURES: {len(FAILURES)}")
     if FAILURES:
