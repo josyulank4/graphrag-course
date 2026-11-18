@@ -1,13 +1,21 @@
-"""Lesson 31 - A Corpus-Wide Answer, Assembled (globalmap) -
-START STATE.
+"""Lesson 31 - A Corpus-Wide Answer, Assembled (globalmap).
 
-Global search over the Meridian corpus. The map phase is here: one
-partial answer per community, built from Lesson 23's claim-checked
-summaries and annotated with the incident reports each community
-touches, and the ranking that orders them is here too. The reduction
-itself - the step that turns fourteen partials into one answer with
-its coverage stated - is built in the lesson; assemble_answer()
-below is the honest stub it replaces.
+Global search over the Meridian corpus, end to end. The canonical
+global question - what are the main themes across this quarter's
+incident reports? - is about the whole corpus, so no traversal from
+one seed can answer it (Lesson 29). The method is map-reduce over
+Lesson 23's community summaries. Map: one partial answer per
+community, built only from that community's claim-checked summary,
+annotated with the incident reports the community actually touches.
+Rank: partials ordered by incident coverage, then by size, so the
+reduction reads the strongest evidence first. Reduce: the partials
+that touch an incident report become the answer's themes; the ones
+that do not are counted aloud, not silently dropped. Coverage is
+stated in both directions - every incident report the answer claims,
+and the documents no community can see because they name no resolved
+entity. A global answer that hides its coverage is Lesson 32's
+failure mode; this one prints it.
+Run: python -m lesson31.globalmap
 """
 from __future__ import annotations
 
@@ -52,7 +60,13 @@ def rank_partials(partials: list[dict]) -> list[dict]:
 
 
 def assemble_answer(ranked: list[dict]) -> tuple[list[dict], list[dict]]:
-    raise NotImplementedError("the reduction is built in the lesson")
+    """The reduce phase: partials touching an incident report become
+    themes, in ranked order. Partials touching none contribute
+    coverage, not themes, and are returned separately so the caller
+    can count them aloud."""
+    themes = [p for p in ranked if p["incident"]]
+    silent = [p for p in ranked if not p["incident"]]
+    return themes, silent
 
 
 def main() -> None:
