@@ -139,6 +139,9 @@ def main():
           _ledger["chunks"] == 51)
     check("resolution blocking finds 14 candidate pairs",
           _ledger["comparisons"] == 14)
+    from lesson39.indexledger import update_ledger
+    check("the arrival touches exactly communities 1 and 3",
+          update_ledger(_ledger)["affected"] == [1, 3])
     print()
     print(f"CHECKS: {COUNT[0]}  FAILURES: {len(FAILURES)}")
     if FAILURES:

@@ -1,5 +1,5 @@
 """Lesson 39 - The Index Ledger: Cost per Document, Cost per Day
-(indexledger) - START STATE.
+(indexledger).
 
 Every other lesson in this section spends the index; this one reads
 its bill. The ledger is kept from the pipeline's own outputs, not
@@ -16,10 +16,7 @@ incremental update actually touches - its chunks, its mentions,
 the resolution comparisons its names provoke, and the community
 summaries that must be regenerated - against the full build. The
 cost of staleness is printed the way Lesson 32 taught: as a
-coverage number, not a currency. The build ledger below is
-complete - it recounts Lessons 15/19/23. The update ledger, the
-pricing of one arrival against the rebuild, is built in the
-lesson; update_ledger() is the honest stub it replaces.
+coverage number, not a currency.
 Run: python -m lesson39.indexledger
 """
 from __future__ import annotations
@@ -115,11 +112,42 @@ def build_ledger() -> dict:
 
 
 def update_ledger(build: dict) -> dict:
-    """The incremental update for one arriving document - built in
-    Lesson 39. The start state keeps the build ledger only; what an
-    arrival costs, and what staleness costs until it lands, is the
-    lesson's build."""
-    raise NotImplementedError("the update ledger is built in Lesson 39")
+    """The incremental update for one arriving document, counted the
+    same way as the build: only what the arrival actually touches."""
+    graph = build["graph"]
+    new_chunks = chunk_document(NEW_DOC)
+    extraction_in = sum(tokens(text) for _d, _i, text in new_chunks)
+    # The arrival's mention yield, counted as a diff of Lesson 15's
+    # own build over the corpus with and without the new chunks.
+    from lesson15.extractpipe import build_graph
+    base = build_graph(chunk_corpus())
+    extended = build_graph(chunk_corpus() + new_chunks)
+    new_mentions = len(extended["mentions"]) - len(base["mentions"])
+    extraction_out = OUTPUT_PER_MENTION * new_mentions
+    extraction_tokens = extraction_in + extraction_out
+    extraction_cost = model_cost(extraction_tokens)
+
+    new_names = sorted({m["entity"] for m in extended["mentions"]
+                        if m["doc"] == NEW_DOC[0]})
+    existing = sorted(graph["entities"])
+    comparisons = sum(1 for n in new_names for e in existing
+                      if _tokens(n) & _tokens(e))
+    resolution_cost = model_cost(comparisons * PAIR_JUDGEMENT_TOKENS)
+
+    affected = [i for i, members in
+                enumerate(build["communities_list"], 1)
+                if set(members) & set(new_names)]
+    per_summary = build["summary_cost"] / build["communities"]
+    summary_cost = per_summary * len(affected)
+    embedding_cost = extraction_in / 1000.0 * EMBED_RATE
+    total = extraction_cost + resolution_cost + summary_cost + embedding_cost
+    return {
+        "chunks": len(new_chunks), "mentions": new_mentions,
+        "new_names": new_names, "comparisons": comparisons,
+        "affected": affected, "extraction_cost": extraction_cost,
+        "resolution_cost": resolution_cost, "summary_cost": summary_cost,
+        "embedding_cost": embedding_cost, "total": total,
+    }
 
 
 def main() -> None:
