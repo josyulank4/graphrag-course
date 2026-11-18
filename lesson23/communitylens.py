@@ -1,12 +1,19 @@
-"""Lesson 23 - Detect Communities, Write the Summaries
-(communitylens) - START STATE.
+"""Lesson 23 - Detect Communities, Write the Summaries (communitylens).
 
 Community detection and summarisation over the resolved Meridian
-graph (Lesson 19's output). The entity graph is here: relationship
-edges and shared-document links over the 29 canonical entities. The
-detection itself - deterministic label propagation - is built in
-the lesson; detect_communities() below is the honest stub it
-replaces, and the summary machinery waits downstream of it.
+graph (Lesson 19's output). The entity graph links entities two ways:
+relationship edges from the corpus (supplied_by, involved, ...) and
+shared-document links (two entities named in the same document).
+Communities are found by deterministic label propagation - sorted
+order, heaviest neighbour label wins, ties break to the smallest
+label - so the partition is reproducible exactly. Each community is
+then summarised by template from its own members, and every claim in
+every summary is checked back against the graph before it may stand:
+a claim is a member name, a member count, or a document count, and
+the checker re-derives each one. A greedy draft summary that
+overclaims is run through the same checker first, and its violations
+are printed, not hidden - Lesson 24 audits why maps mislead; this
+lesson builds the check that catches it.
 Run: python -m lesson23.communitylens
 """
 from __future__ import annotations
@@ -45,7 +52,30 @@ def entity_graph(graph: dict) -> dict:
 
 
 def detect_communities(adj: dict) -> list[list[str]]:
-    raise NotImplementedError("community detection is built in the lesson")
+    """Label propagation, deterministic: nodes in sorted order adopt
+    the heaviest neighbour label (ties: smallest label); iterate to a
+    fixpoint. Singletons are reported, never hidden or merged away."""
+    labels = {n: n for n in adj}
+    for _round in range(50):
+        changed = False
+        for node in sorted(adj):
+            if not adj[node]:
+                continue
+            weight: dict[str, int] = {}
+            for nbr, w in adj[node].items():
+                weight[labels[nbr]] = weight.get(labels[nbr], 0) + w
+            best = min(weight, key=lambda lab: (-weight[lab], lab))
+            if best != labels[node]:
+                labels[node] = best
+                changed = True
+        if not changed:
+            break
+    groups: dict[str, list[str]] = {}
+    for node, lab in labels.items():
+        groups.setdefault(lab, []).append(node)
+    communities = [sorted(members) for members in groups.values()]
+    communities.sort(key=lambda ms: (-len(ms), ms[0]))
+    return communities
 
 
 def community_docs(members: list[str], graph: dict) -> set:
