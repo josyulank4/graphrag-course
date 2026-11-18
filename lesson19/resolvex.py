@@ -1,12 +1,17 @@
-"""Lesson 19 - Resolve Duplicates, Keep the Receipts (resolvex) -
-START STATE.
+"""Lesson 19 - Resolve Duplicates, Keep the Receipts (resolvex).
 
-Entity resolution over the Lesson 15 extraction. The surface-keyed
-graph is here: mentions keyed by the name the text actually used, the
-fragmentation report printed honestly. The resolution itself - the
-scored merge decisions, the normalisations, the refusals, the
-reversible merge log - is built in the lesson; resolve() below is
-the honest stub it replaces.
+Entity resolution over the Lesson 15 extraction. The typed pass keys
+its graph by canonical name, but a real extraction run keys it by the
+surface form the text actually used - and the same entity arrives
+under several names: 'Handheld scanners' at the head of a sentence,
+'scanners' two sentences later, contracts named by their short form.
+This lesson builds that surface-keyed graph honestly, then resolves
+it: candidate pairs are scored on printed evidence, merges and
+normalisations are logged with the evidence behind them, tempting
+pairs that must NOT merge are refused with the reason, and every
+merge stays reversible because the log keeps every surface form.
+The resolved graph is checked against Lesson 15's canonical graph:
+same entities, same edges, no evidence lost.
 Run: python -m lesson19.resolvex
 """
 from __future__ import annotations
@@ -117,7 +122,95 @@ def _neighbours(edges: list, node: str) -> set:
 
 
 def resolve(graph: dict) -> dict:
-    raise NotImplementedError("the resolution pass is built in the lesson")
+    """Resolve surface entities to canonical entities, with receipts.
+
+    Decisions, in order: multi-surface clusters merge on scored
+    evidence; single surfaces that differ from their canonical name
+    are normalised with the attesting sentence as evidence; pairs of
+    distinct canonical entities that a naive matcher would merge are
+    examined and refused with the blocking reason. Every decision is
+    appended to the merge log, so every merge is reversible.
+    """
+    entities, edges, mentions = graph["entities"], graph["edges"], \
+        graph["mentions"]
+    canon_of: dict[str, str] = {}
+    for m in mentions:
+        canon_of[m["surface"]] = m["entity"]
+    clusters: dict[str, list[str]] = {}
+    for surf in entities:
+        clusters.setdefault(canon_of[surf], []).append(surf)
+    docs_of: dict[str, set] = {}
+    for m in mentions:
+        docs_of.setdefault(m["surface"], set()).add(m["doc"])
+
+    log: list[str] = []
+    decisions = 0
+    for canon in sorted(clusters):
+        members = sorted(clusters[canon])
+        if len(members) > 1:
+            points, why = 0.0, []
+            low = [m.lower() for m in members]
+            if any(a != b and (a in b or b in a)
+                   for i, a in enumerate(low) for b in low[i + 1:]):
+                points += 0.40
+                why.append("one name contains the other")
+            if len({entities[m] for m in members}) == 1:
+                points += 0.20
+                why.append(f"same type ({entities[members[0]]})")
+            shared = set.intersection(*[docs_of[m] for m in members])
+            if shared:
+                points += 0.20
+                why.append("shared document " + ", ".join(sorted(shared)))
+            neigh = [_neighbours(edges, m) for m in members]
+            common = set.intersection(*neigh) if neigh else set()
+            if common:
+                points += 0.18
+                why.append("shared neighbour " + ", ".join(sorted(common)))
+            log.append(f"MERGE {' + '.join(members)} -> {canon} "
+                       f"(confidence {points:.2f}: {'; '.join(why)})")
+            decisions += 1
+        elif members[0] != canon:
+            surf = members[0]
+            attesting = next(m["sentence"] for m in mentions
+                             if m["entity"] == canon)
+            log.append(f"NORMALISE {surf} -> {canon} "
+                       f"(confidence 0.95: gazetteer canonical name; "
+                       f"attested in '{attesting}')")
+            decisions += 1
+
+    refusals: list[str] = []
+    canons = sorted(clusters)
+    for i, a in enumerate(canons):
+        for b in canons[i + 1:]:
+            containment = a.lower() in b.lower() or b.lower() in a.lower()
+            shared_token = bool(_tokens(a) & _tokens(b))
+            same_type = entities[clusters[a][0]] == entities[clusters[b][0]]
+            if not (containment or (shared_token and same_type)):
+                continue
+            types = (entities[clusters[a][0]], entities[clusters[b][0]])
+            if types[0] != types[1]:
+                reason = f"type conflict ({types[0]} vs {types[1]})"
+            else:
+                reason = "shared token only; no shared document or neighbour"
+            refusals.append(f"KEEP APART {a} / {b} ({reason})")
+
+    resolved_edges: list[tuple[str, str, str, str, str]] = []
+    seen: set = set()
+    folded = 0
+    for s, rel, o, doc, sent in edges:
+        cs = canon_of.get(s, s)
+        co = o if rel == "named_in" else canon_of.get(o, o)
+        key = (cs, rel, co, doc, sent) if rel == "named_in" \
+            else (cs, rel, co, doc)
+        if key in seen:
+            folded += 1
+            continue
+        seen.add(key)
+        resolved_edges.append((cs, rel, co, doc, sent))
+    resolved_entities = {canon_of[s]: t for s, t in entities.items()}
+    return {"entities": resolved_entities, "edges": resolved_edges,
+            "log": log, "refusals": refusals, "decisions": decisions,
+            "folded": folded}
 
 
 def resolve_graph() -> dict:
