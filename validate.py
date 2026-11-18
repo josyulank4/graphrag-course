@@ -67,6 +67,11 @@ def main():
                               "themes: 10 of 14 communities touch an incident report; 4 contribute coverage, not themes",
                               "coverage: incident reports 9 of 9; map documents 17 of 24",
                               "globalmap demo complete"])
+    expect("lesson39.indexledger", ["build total: $1.91",
+                              "cost per document: $0.08 (24 documents)",
+                              "incremental total: $0.50 - 26.0% of the full build",
+                              "after the update: coverage 10 of 10 incident reports",
+                              "indexledger demo complete"])
     expect("lesson35.hybridfuse", ["no seed: the question names no resolved entity, so the graph abstains",
                               "the themes cover the incident set 9 of 9",
                               "scoreboard: vector 2 of 4, graph 3 of 4, hybrid 4 of 4",
@@ -128,6 +133,12 @@ def main():
           graph_search(resolve_graph(), QUESTIONS4[3])[0] == [])
     check("hybrid fusion ranks the corroborated document first",
           fuse(["d03", "d01", "d02"], ["d03", "d01", "d02"])[0] == "d03")
+    from lesson39.indexledger import build_ledger
+    _ledger = build_ledger()
+    check("the build ledger counts Lesson 15's 51 chunks",
+          _ledger["chunks"] == 51)
+    check("resolution blocking finds 14 candidate pairs",
+          _ledger["comparisons"] == 14)
     print()
     print(f"CHECKS: {COUNT[0]}  FAILURES: {len(FAILURES)}")
     if FAILURES:
