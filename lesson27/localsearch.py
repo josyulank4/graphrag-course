@@ -1,12 +1,19 @@
-"""Lesson 27 - Answer a Multi-Hop Question by Traversal
-(localsearch) - START STATE.
+"""Lesson 27 - Answer a Multi-Hop Question by Traversal (localsearch).
 
 Local search over the resolved Meridian graph (Lesson 19's output).
-The seed machinery is here: the documents the question points at are
-found by title evidence, and hop 1 - the entities each seed names -
-is read straight off the named_in edges. The traversal itself is
-built in the lesson; traverse() below is the honest stub it
-replaces, and the answer machinery waits downstream of it.
+The canonical multi-hop question names two documents by description -
+the March outage review and the contract renewal memo - and asks for
+the supplier named in both. No single chunk holds that join, so
+keyword retrieval cannot answer it (Lesson 7 measured exactly that);
+the graph answers it by traversal. Seeds are the documents the
+question points at, found by title evidence, not by guessing. Hop 1
+follows the named_in edges backwards to the entities each seed names.
+Hop 2 expands the neighbourhood under a node budget, so the cost of
+depth is printed, not guessed. The answer is the entity standing in
+both seeds' hop-1 sets with the type the question asks for, and the
+path is printed as the citation: every hop carries the sentence that
+supports it, from the edge provenance Lesson 15 stored.
+Run: python -m lesson27.localsearch
 """
 from __future__ import annotations
 
@@ -54,7 +61,24 @@ def adjacency(graph: dict) -> dict[str, set]:
 
 
 def traverse(graph: dict, seed_docs: list[str]) -> list[set]:
-    raise NotImplementedError("traversal is built in the lesson")
+    """Breadth-first layers from the seeds, depth-capped and budget-
+    checked. Returns the layers; layer 0 is the seeds themselves.
+    The budget is a guard, reported by the caller - on a denser graph
+    it is the line that keeps traversal inside latency (Lesson 26)."""
+    adj = adjacency(graph)
+    layers = [set(seed_docs)]
+    visited = set(seed_docs)
+    for _depth in range(MAX_DEPTH):
+        frontier = set()
+        for node in layers[-1]:
+            frontier |= adj.get(node, set())
+        frontier -= visited
+        if len(visited) + len(frontier) > NODE_BUDGET:
+            frontier = set(sorted(frontier)
+                             [:NODE_BUDGET - len(visited)])
+        visited |= frontier
+        layers.append(frontier)
+    return layers
 
 
 def evidence_for(graph: dict, entity: str, doc: str) -> str:
