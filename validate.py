@@ -56,6 +56,12 @@ def main():
                               "summaries written: 14",
                               "summary claims checked: 71, violations: 0",
                               "communitylens demo complete"])
+    expect("lesson27.localsearch", ["seed documents: d02 (title overlap 3), d03 (title overlap 3)",
+                              "hop 1: d02 names 3 entities; d03 names 2 entities",
+                              "hop 2: neighbourhood grows to 8 nodes",
+                              "named in both seed documents: Kestrel Components",
+                              "answer: Kestrel Components (Supplier)",
+                              "localsearch demo complete"])
     print()
     print("== direct assertions ==")
     from graphcommon import DOCUMENTS, QUESTIONS, keyword_search, tokenize
@@ -89,6 +95,15 @@ def main():
     from lesson23.communitylens import entity_graph
     check("entity graph spans all 29 resolved entities",
           len(entity_graph(resolve_graph())) == 29)
+    from lesson27.localsearch import find_seeds, named_entities
+    _g = resolve_graph()
+    check("local search seeds are the two documents the question names",
+          [d for d, _t, _o in find_seeds(QUESTIONS[1]["question"])]
+          == ["d02", "d03"])
+    check("exactly one entity is named in both seed documents",
+          sorted(set(named_entities(_g, "d02"))
+                 & set(named_entities(_g, "d03")))
+          == ["Kestrel Components"])
     print()
     print(f"CHECKS: {COUNT[0]}  FAILURES: {len(FAILURES)}")
     if FAILURES:
