@@ -39,6 +39,15 @@ def main():
                               "edges: 47",
                               "edges with evidence: 47 of 47 (100%)",
                               "extractpipe demo complete"])
+    expect("lesson19.resolvex", ["documents: 24",
+                              "surface entities: 30",
+                              "edges keyed by surface: 48",
+                              "MERGE Handheld scanners + scanners -> handheld scanners",
+                              "resolved entities: 29",
+                              "resolved edges: 47",
+                              "evidence preserved: named_in 34 of 34",
+                              "resolved graph matches Lesson 15 canonical graph: YES",
+                              "resolvex demo complete"])
     print()
     print("== direct assertions ==")
     from graphcommon import DOCUMENTS, QUESTIONS, keyword_search, tokenize
@@ -61,6 +70,13 @@ def main():
     check("corpus chunks into 51 sentence windows with provenance",
           len(chunk_corpus()) == 51
           and all(c[0].startswith("d") and c[2] for c in chunk_corpus()))
+    from lesson19.resolvex import surface_graph
+    _sg = surface_graph(chunk_corpus())
+    check("surface graph fragments the corpus into 30 surface entities",
+          len(_sg["entities"]) == 30)
+    check("handheld scanners arrives under two surface forms",
+          _sg["entities"].get("Handheld scanners") == "Equipment"
+          and _sg["entities"].get("scanners") == "Equipment")
     print()
     print(f"CHECKS: {COUNT[0]}  FAILURES: {len(FAILURES)}")
     if FAILURES:
