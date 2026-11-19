@@ -177,6 +177,22 @@ def main():
           _gs["multi-hop"] == (3, 7))
     check("the graph wins global 4 of 5 to the baseline's 0 of 5",
           _gs["global"] == (4, 5))
+    from lesson50.graphstack import build_stack
+    import contextlib, io
+    with contextlib.redirect_stdout(io.StringIO()):
+        _stack = build_stack()
+    check("the capstone stack reproduces Lesson 15's graph (29 entities, 47 edges)",
+          (_stack["entities"], _stack["edges"]) == (29, 47))
+    check("every capstone edge is attested (47 of 47)",
+          _stack["attested"] == _stack["edges"] == 47)
+    check("the resolved capstone graph matches the canonical graph",
+          _stack["canonical_match"])
+    check("the capstone summary gate holds at 71 claims, 0 violations",
+          (_stack["claims"], _stack["violations"]) == (71, 0))
+    check("the capstone local search answers Kestrel Components",
+          _stack["local_answer"] == "Kestrel Components")
+    check("the capstone evaluation reproduces Lesson 43 (vector 8, graph 12)",
+          (_stack["vtotal"], _stack["gtotal"]) == (8, 12))
     print()
     print(f"CHECKS: {COUNT[0]}  FAILURES: {len(FAILURES)}")
     if FAILURES:
