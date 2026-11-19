@@ -193,8 +193,29 @@ def build_stack() -> dict:
     }
 
 
+SHIP_BAR = [
+    "ship bar (fixed in Lesson 49, before grading):",
+    "  1 evidence: every edge attested (47 of 47)",
+    "  2 resolution: resolved graph == Lesson 15 canonical; named_in 34 of 34",
+    "  3 summary gate: 0 violations across all claims (71)",
+    "  4 global coverage: incident reports 9 of 9",
+    "  5 blindness named: every invisible document listed (7)",
+    "  6 graph beats baseline where it claims: multi-hop +3, global +4",
+    "  7 lookups served by the scoring side: baseline 8 of 8 in the shipped routing",
+    "  8 hybrid holds both halves: 4 of 4 on the Lesson 35 set",
+    "  9 index priced: arrival under half a rebuild (26.0% < 50%)",
+    "  10 freshness: the scoped update restores coverage to 10 of 10",
+]
+
+
+def review(stack: dict) -> None:
+    """Grade the stack against SHIP_BAR and compute the verdict."""
+    raise NotImplementedError(
+        "the graded review lands with the Lesson 51 finish")
+
+
 def main() -> None:
-    build_stack()
+    review(build_stack())
 
 
 if __name__ == "__main__":

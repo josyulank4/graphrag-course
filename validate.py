@@ -92,6 +92,13 @@ def main():
                               "20 questions: graph 12 of 20 (lookup 5/8, multi-hop 3/7, global 4/5)",
                               "hybrid set (Lesson 35): vector 2 of 4, graph 3 of 4, hybrid 4 of 4",
                               "graphstack demo complete"])
+    expect("lesson50.graphstack", ["ship bar (fixed in Lesson 49, before grading):",
+                              "1 evidence: 47/47 edges attested: PASS",
+                              "5 invisible documents named: 7 (d13, d14, d17, d18, d19, d21, d24): PASS",
+                              "6 per-shape wins: multi-hop +3, global +4: PASS",
+                              "9 index priced: build $1.91, arrival 26.0% of a rebuild: PASS",
+                              "verdict: SHIP",
+                              "conditions: lookups stay routed to the baseline side"])
     print()
     print("== direct assertions ==")
     from graphcommon import DOCUMENTS, QUESTIONS, keyword_search, tokenize
