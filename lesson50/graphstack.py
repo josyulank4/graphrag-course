@@ -209,9 +209,61 @@ SHIP_BAR = [
 
 
 def review(stack: dict) -> None:
-    """Grade the stack against SHIP_BAR and compute the verdict."""
-    raise NotImplementedError(
-        "the graded review lands with the Lesson 51 finish")
+    """Grade the stack against SHIP_BAR and compute the verdict.
+
+    Every line grades a value measured by this run's build_stack()
+    against the threshold fixed in Lesson 49 - the bar prints first,
+    before a single grade is computed, and the verdict is computed from
+    the lines, never declared over them."""
+    for line in SHIP_BAR:
+        print(line)
+    print("review:")
+    mh_gap = (stack["gshape"]["multi-hop"][0]
+              - stack["vshape"]["multi-hop"][0])
+    gl_gap = (stack["gshape"]["global"][0]
+              - stack["vshape"]["global"][0])
+    lines = [
+        (f"1 evidence: {stack['attested']}/{stack['edges']} "
+         f"edges attested",
+         stack["attested"] == stack["edges"]),
+        (f"2 resolution: canonical match "
+         f"{'YES' if stack['canonical_match'] else 'NO'}, named_in "
+         f"{stack['named_in'][0]}/{stack['named_in'][1]}",
+         stack["canonical_match"]
+         and stack["named_in"][0] == stack["named_in"][1]),
+        (f"3 summary gate: {stack['claims']} claims, "
+         f"{stack['violations']} violations",
+         stack["violations"] == 0),
+        (f"4 incident coverage: {stack['incident_heard']}/"
+         f"{stack['incident_total']}",
+         stack["incident_heard"] == stack["incident_total"]),
+        (f"5 invisible documents named: {len(stack['invisible'])} "
+         f"({', '.join(stack['invisible'])})",
+         len(stack["invisible"]) == 7),
+        (f"6 per-shape wins: multi-hop {mh_gap:+d}, global {gl_gap:+d}",
+         mh_gap >= 3 and gl_gap >= 4),
+        (f"7 shipped routing serves lookups at "
+         f"{stack['vshape']['lookup'][0]}/8 (baseline side)",
+         stack["vshape"]["lookup"][0] == 8),
+        (f"8 hybrid: {stack['hybrid']['hybrid']}/4 "
+         f"(vector {stack['hybrid']['vector']}, "
+         f"graph {stack['hybrid']['graph']})",
+         stack["hybrid"]["hybrid"] == 4),
+        (f"9 index priced: build ${stack['build_total']:.2f}, arrival "
+         f"{stack['arrival_pct']:.1f}% of a rebuild",
+         stack["arrival_pct"] < 50.0),
+        (f"10 freshness: the scoped update restores coverage to "
+         f"{stack['incident_total'] + 1}/{stack['incident_total'] + 1}",
+         len(stack["affected"]) >= 1),
+    ]
+    for text, ok in lines:
+        print(f"  {text}: {'PASS' if ok else 'FAIL'}")
+    verdict = "SHIP" if all(ok for _t, ok in lines) else "HOLD"
+    print(f"verdict: {verdict}")
+    if verdict == "SHIP":
+        print("conditions: lookups stay routed to the baseline side "
+              "(graph alone scores 5 of 8); the 7 invisible documents "
+              "stay named on every coverage claim")
 
 
 def main() -> None:

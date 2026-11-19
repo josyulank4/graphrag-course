@@ -200,6 +200,15 @@ def main():
           _stack["local_answer"] == "Kestrel Components")
     check("the capstone evaluation reproduces Lesson 43 (vector 8, graph 12)",
           (_stack["vtotal"], _stack["gtotal"]) == (8, 12))
+    from lesson50.graphstack import review
+    _rbuf = io.StringIO()
+    with contextlib.redirect_stdout(_rbuf):
+        review(_stack)
+    _rout = _rbuf.getvalue()
+    check("the capstone review passes all ten ship-bar lines",
+          _rout.count(": PASS") == 10)
+    check("the capstone review computes the SHIP verdict",
+          "verdict: SHIP" in _rout)
     print()
     print(f"CHECKS: {COUNT[0]}  FAILURES: {len(FAILURES)}")
     if FAILURES:
