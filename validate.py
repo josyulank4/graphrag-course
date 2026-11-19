@@ -81,6 +81,17 @@ def main():
                               "graph scoreboard: 12 of 20",
                               "lookup: vector 8 of 8, graph 5 of 8 - gap -3 (the baseline wins)",
                               "grapheval demo complete"])
+    expect("lesson50.graphstack", ["documents: 24, chunks: 51 - unchanged since Lesson 1",
+                              "entities: 29, edges: 47",
+                              "evidence: 47 of 47 edges carry their sentence",
+                              "matches Lesson 15 canonical graph: YES",
+                              "summary gate: 71 claims checked, 0 violations",
+                              "answer: Kestrel Components (Supplier)",
+                              "incident coverage: 9 of 9 reports; map hears 17 of 24 documents",
+                              "build: $1.91 for 24 documents ($0.08 per document), $0.52 per day",
+                              "20 questions: graph 12 of 20 (lookup 5/8, multi-hop 3/7, global 4/5)",
+                              "hybrid set (Lesson 35): vector 2 of 4, graph 3 of 4, hybrid 4 of 4",
+                              "graphstack demo complete"])
     print()
     print("== direct assertions ==")
     from graphcommon import DOCUMENTS, QUESTIONS, keyword_search, tokenize
