@@ -1,5 +1,4 @@
-"""Lesson 43 - Score Both Systems, Read the Gap (grapheval) -
-START STATE.
+"""Lesson 43 - Score Both Systems, Read the Gap (grapheval).
 
 The evaluation the last two lessons contracted for. One question set -
 Lesson 11's twenty questions, the set the schema was sketched from -
@@ -7,11 +6,13 @@ each question carrying the evidence documents a truthful answer must
 draw on, fixed here BEFORE any scoring runs. Both systems are scored
 under the contract Lesson 7 set and Lesson 35 reused: a system answers
 a question only if its own evidence, as delivered, can state the
-answer. The vector baseline below is complete - it is Lesson 7's
-honest keyword top-3, unchanged, and its scoreboard is the number the
-graph must beat per shape or stand unjustified. The graph scoring and
-the gap table are built in the lesson; score_graph() is the honest
-stub they replace.
+answer. The vector side is the honest baseline, unchanged since
+Lesson 7: keyword top-3. The graph side is Lesson 35's
+shape-dispatched search, unchanged: a named_in walk for lookups,
+seed-and-join for multi-hop, map-reduce themes for global questions.
+The scores are read per shape, never averaged away - the average is
+printed once, at the end, labelled as the number this lesson refuses
+to read.
 Run: python -m lesson43.grapheval
 """
 from __future__ import annotations
@@ -60,6 +61,20 @@ def eval_set() -> list[dict]:
     return out
 
 
+def graph_verdict(graph: dict, q: dict) -> tuple[bool, str]:
+    """The contract applied to the graph side: it answers only if
+    the evidence it stands behind covers the question's evidence
+    set. An abstention is a verdict, not an error."""
+    docs, note = graph_search(graph, q)
+    if not docs:
+        return False, note
+    missing = [d for d in q["evidence_docs"] if d not in docs]
+    if missing:
+        return False, (f"{note}; its evidence misses "
+                       f"{', '.join(missing)}")
+    return True, note
+
+
 def score_vector(questions: list[dict]) -> list[tuple[dict, bool, str]]:
     """The baseline, scored exactly as Lesson 7 scored it."""
     rows = []
@@ -71,11 +86,9 @@ def score_vector(questions: list[dict]) -> list[tuple[dict, bool, str]]:
 
 
 def score_graph(questions: list[dict]) -> list[tuple[dict, bool, str]]:
-    """The graph side, scored under the same contract - built in
-    Lesson 43. Baselines first: until this exists, the graph's
-    claims are unscored, and unscored claims are marketing."""
-    raise NotImplementedError(
-        "the graph side is scored in Lesson 43 - baselines first")
+    """The graph system, scored under the same contract."""
+    graph = resolve_graph()
+    return [(q, *graph_verdict(graph, q)) for q in questions]
 
 
 def by_shape(rows: list[tuple[dict, bool, str]]) -> dict[str, tuple[int, int]]:
@@ -118,6 +131,26 @@ def main() -> None:
     print("== graph system: shape-dispatched search (Lesson 35, unchanged) ==")
     grows = score_graph(questions)
     print_rows(grows)
+    gshape = by_shape(grows)
+    gtotal = sum(ok for _q, ok, _w in grows)
+    print(f"graph by shape: lookup {gshape['lookup'][0]} of 8, "
+          f"multi-hop {gshape['multi-hop'][0]} of 7, "
+          f"global {gshape['global'][0]} of 5")
+    print(f"graph scoreboard: {gtotal} of 20")
+    print()
+    print("== the gap, read per shape ==")
+    for shape in SHAPES:
+        v, n = vshape[shape]
+        g, _n = gshape[shape]
+        gap = g - v
+        who = ("the graph wins" if gap > 0 else
+               "the baseline wins" if gap < 0 else "level")
+        print(f"{shape}: vector {v} of {n}, graph {g} of {n} - "
+              f"gap {gap:+d} ({who})")
+    print(f"overall: vector {vtotal} of 20, graph {gtotal} of 20 - "
+          f"gap {gtotal - vtotal:+d}, the one number this lesson "
+          f"refuses to read")
+    print("grapheval demo complete")
 
 
 if __name__ == "__main__":

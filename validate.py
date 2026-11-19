@@ -158,6 +158,14 @@ def main():
           _es[1]["evidence_docs"] == ["d02", "d03"])
     check("the vector baseline scores 8 of 20 on the eval set",
           sum(ok for _q, ok, _w in score_vector(_es)) == 8)
+    from lesson43.grapheval import by_shape, score_graph
+    _gs = by_shape(score_graph(_es))
+    check("the graph loses lookup 5 of 8 to the baseline's 8 of 8",
+          _gs["lookup"] == (5, 8))
+    check("the graph wins multi-hop 3 of 7 to the baseline's 0 of 7",
+          _gs["multi-hop"] == (3, 7))
+    check("the graph wins global 4 of 5 to the baseline's 0 of 5",
+          _gs["global"] == (4, 5))
     print()
     print(f"CHECKS: {COUNT[0]}  FAILURES: {len(FAILURES)}")
     if FAILURES:
