@@ -76,6 +76,11 @@ def main():
                               "the themes cover the incident set 9 of 9",
                               "scoreboard: vector 2 of 4, graph 3 of 4, hybrid 4 of 4",
                               "hybridfuse demo complete"])
+    expect("lesson43.grapheval", ["question set: 20 questions (lookup 8, multi-hop 7, global 5)",
+                              "vector scoreboard: 8 of 20",
+                              "graph scoreboard: 12 of 20",
+                              "lookup: vector 8 of 8, graph 5 of 8 - gap -3 (the baseline wins)",
+                              "grapheval demo complete"])
     print()
     print("== direct assertions ==")
     from graphcommon import DOCUMENTS, QUESTIONS, keyword_search, tokenize
@@ -142,6 +147,17 @@ def main():
     from lesson39.indexledger import update_ledger
     check("the arrival touches exactly communities 1 and 3",
           update_ledger(_ledger)["affected"] == [1, 3])
+    from lesson43.grapheval import eval_set, score_vector
+    _es = eval_set()
+    check("the eval set holds Lesson 11's twenty questions",
+          len(_es) == 20)
+    check("the eval census is 8 lookup / 7 multi-hop / 5 global",
+          [sum(1 for q in _es if q["shape"] == s)
+           for s in ("lookup", "multi-hop", "global")] == [8, 7, 5])
+    check("the canonical multi-hop keeps its two-document evidence",
+          _es[1]["evidence_docs"] == ["d02", "d03"])
+    check("the vector baseline scores 8 of 20 on the eval set",
+          sum(ok for _q, ok, _w in score_vector(_es)) == 8)
     print()
     print(f"CHECKS: {COUNT[0]}  FAILURES: {len(FAILURES)}")
     if FAILURES:
